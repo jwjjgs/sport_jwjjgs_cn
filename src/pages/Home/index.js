@@ -286,7 +286,7 @@ function Home() {
         }
       >
         <Space direction="vertical" style={{ width: "100%" }} size="large">
-          <Card title="告知" extra={<b>最后更新 2021/03/16</b>}>
+          <Card title="告知" extra={<b>最后更新 2021/03/24</b>}>
             <Typography.Text>
               1.本功能属于纯前端实现，不存在收集，保留用户信息等
               <br />
