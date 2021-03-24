@@ -1,66 +1,87 @@
-import { message, PageHeader } from "antd";
-import React, { useEffect, useRef, useState } from "react";
-import { Redirect } from "react-router";
-import { useMap, APILoader, usePolyline } from "@uiw/react-baidu-map";
+import { Button, message, PageHeader } from "antd";
+import React, { useEffect, useState } from "react";
+import AMapLoader from "@amap/amap-jsapi-loader";
+import { ShareAltOutlined } from "@ant-design/icons";
+import copy from "copy-to-clipboard";
+import { Base64 as base64 } from "js-base64";
 
 function Map(props) {
-  //const [polyline, setPolyline] = useState(<></>);
-  const { setContainer, map } = useMap({
-    zoom: 17,
-    center: "四川",
-  });
-  /*  const { polyline } = usePolyline({
-    map,
-    enableEditing,
-    strokeOpacity,
-    path: [
-      { lng: 116.387112, lat: 39.920977 },
-      { lng: 116.385243, lat: 39.913063 },
-      { lng: 116.394226, lat: 39.917988 },
-      { lng: 116.401772, lat: 39.921364 },
-      { lng: 116.41248, lat: 39.927893 },
-    ],
-  }); */
-  /*  useEffect(() => {
-    if (baiduMap.current) {
-      setContainer(baiduMap.current);
-    }
-  });
-  const _polyline = [];
-  try {
-    const {
-      location: {
-        state: {
-          circuitInfo: { longitude, speed, latitude },
+  const [info, setInfo] = useState(null);
+  useEffect(() => {
+    try {
+      //得到传入数据
+      const {
+        location: {
+          state: {
+            circuitInfo: { longitude, latitude, speed },
+          },
         },
-      },
-    } = props;
-    const combine = (arr, i) => {
-      if (typeof i === "object") return arr.concat(i);
-      arr.push(i);
-      return arr;
-    };
-    const longitude_ = longitude.reduce(combine, []);
-    const latitude_ = latitude.reduce(combine, []);
+      } = props;
+      setInfo({ longitude, latitude, speed });
+      //将传入数据 longitude = [[...],[...],...]  ... 转为一维数组
+      const combine = (arr, i) => {
+        if (Array.isArray(i)) arr.push(...i);
+        else arr.push(i);
+        return arr;
+      };
+      const longitude_ = longitude.reduce(combine, []);
+      const latitude_ = latitude.reduce(combine, []);
 
-    for (let i = 0; i < speed.length; i++)
-      _polyline.push({
-        lng: longitude_[i],
-        lat: latitude_[i],
-      });
-
-    console.log(_polyline);
-  } catch (e) {
-    //return <Redirect to="/" />;
-  }
- */
+      //将两个一维数组转字符串[]
+      const coords = [];
+      for (let i = 0; i < longitude_.length; i++)
+        coords.push([longitude_[i], latitude_[i]]);
+      if (coords.length > 0) {
+        AMapLoader.load({
+          key: "3f3868abdb36336114bde5ab6eecdb68", // 申请好的Web端开发者Key，首次调用 load 时必填
+          plugins: [], // 需要使用的的插件列表，如比例尺'AMap.Scale'等
+        })
+          .then((AMap) => {
+            const map = new AMap.Map("map", {
+              center: coords[0],
+              zoom: 17,
+            });
+            const polyline = new AMap.Polyline({
+              path: coords, //设置线覆盖物路径
+              strokeColor: "#3366FF", //线颜色
+              strokeWeight: 3, //线宽
+              strokeStyle: "solid", //线样式
+            });
+            map.add(polyline);
+          })
+          .catch((e) => {
+            console.log(e);
+          });
+      }
+    } catch {}
+  }, [props]);
   return (
     <>
       <PageHeader
         title="轨迹显示"
         onBack={() => {
-          props.history.goBack();
+          props.history.push("/");
         }}
+        extra={[
+          <Button
+            key="export"
+            type="link"
+            icon={<ShareAltOutlined />}
+            onClick={() => {
+              try {
+                if (!info) {
+                  message.warning("导出失败");
+                  return;
+                }
+                const str = JSON.stringify(info);
+                copy(base64.encode(str));
+                message.success("导出成功");
+              } catch {
+                message.warning("导出失败");
+              }
+            }}
+          ></Button>,
+        ]}
       />
       <div
         style={{
@@ -69,9 +90,7 @@ function Map(props) {
           marginTop: "-72px",
         }}
       >
-        <APILoader akay="DmvaTbVhDI5FzcLmG8zcZQdPllicdMXQ">
-          {/*  <div ref={baiduMap} /> */}
-        </APILoader>
+        <div id="map" style={{ height: "100%" }}></div>
       </div>
     </>
   );

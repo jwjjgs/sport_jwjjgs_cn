@@ -3,6 +3,7 @@ import { HashRouter, Redirect, Route, Switch } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Map from "./pages/Map";
+
 function Routes() {
   return (
     <HashRouter>

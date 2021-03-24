@@ -7,14 +7,12 @@ import Routes from "./Routes";
 import "./boot";
 
 ReactDOM.render(
-  <React.StrictMode>
-    <UseRequestProvider
-      value={{
-        requestMethod: (param) => axios(param),
-      }}
-    >
-      <Routes />
-    </UseRequestProvider>
-  </React.StrictMode>,
+  <UseRequestProvider
+    value={{
+      requestMethod: (param) => axios(param),
+    }}
+  >
+    <Routes />
+  </UseRequestProvider>,
   document.getElementById("root")
 );

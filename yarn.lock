@@ -10,6 +10,11 @@
     lodash.debounce "^4.0.8"
     lodash.throttle "^4.1.1"
 
+"@amap/amap-jsapi-loader@^0.0.7":
+  version "0.0.7"
+  resolved "https://registry.npm.taobao.org/@amap/amap-jsapi-loader/download/@amap/amap-jsapi-loader-0.0.7.tgz?cache=0&sync_timestamp=1603939019383&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40amap%2Famap-jsapi-loader%2Fdownload%2F%40amap%2Famap-jsapi-loader-0.0.7.tgz#76b5cbcc22f6844003474e37eed1dcd879cb117c"
+  integrity sha1-drXLzCL2hEADR0437tHc2HnLEXw=
+
 "@ant-design/colors@^6.0.0":
   version "6.0.0"
   resolved "https://registry.npm.taobao.org/@ant-design/colors/download/@ant-design/colors-6.0.0.tgz?cache=0&sync_timestamp=1612935636044&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40ant-design%2Fcolors%2Fdownload%2F%40ant-design%2Fcolors-6.0.0.tgz#9b9366257cffcc47db42b9d0203bb592c13c0298"
@@ -2031,13 +2036,6 @@
   dependencies:
     "@typescript-eslint/types" "4.18.0"
     eslint-visitor-keys "^2.0.0"
-
-"@uiw/react-baidu-map@^1.18.3":
-  version "1.18.3"
-  resolved "https://registry.npm.taobao.org/@uiw/react-baidu-map/download/@uiw/react-baidu-map-1.18.3.tgz#0b9fd327eac3f6a48c7e3dad63d336d80633616d"
-  integrity sha1-C5/TJ+rD9qSMfj2tY9M22AYzYW0=
-  dependencies:
-    "@babel/runtime" "^7.12.5"
 
 "@webassemblyjs/ast@1.9.0":
   version "1.9.0"
@@ -6839,6 +6837,11 @@ jest@26.6.0:
     "@jest/core" "^26.6.0"
     import-local "^3.0.2"
     jest-cli "^26.6.0"
+
+js-base64@^3.6.0:
+  version "3.6.0"
+  resolved "https://registry.npm.taobao.org/js-base64/download/js-base64-3.6.0.tgz?cache=0&sync_timestamp=1604450395858&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fjs-base64%2Fdownload%2Fjs-base64-3.6.0.tgz#773e1de628f4f298d65a7e9842c50244751f5756"
+  integrity sha1-dz4d5ij08pjWWn6YQsUCRHUfV1Y=
 
 js-cookie@^2.2.1:
   version "2.2.1"

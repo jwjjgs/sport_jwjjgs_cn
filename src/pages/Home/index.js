@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Switch } from "react-router-dom";
 import {
   Button,
   Card,
@@ -8,20 +8,26 @@ import {
   List,
   message,
   PageHeader,
-  Popover,
   Space,
   Typography,
 } from "antd";
-import { CloseCircleTwoTone, CheckCircleTwoTone } from "@ant-design/icons";
+import {
+  CloseCircleTwoTone,
+  CheckCircleTwoTone,
+  EyeOutlined,
+} from "@ant-design/icons";
 import { useRequest } from "ahooks";
 import axios from "axios";
 import moment from "moment";
 import md5 from "js-md5";
-import copy from "copy-to-clipboard";
+import { Base64 as base64 } from "js-base64";
 
 const VERSION = "V 2.5.6";
 
 const getRandom = (n, m) => Math.floor(Math.random() * (m - n + 1)) + n;
+
+const getNearLoc = (loc, limit = 1000) =>
+  parseFloat(loc) + getRandom(-1 * limit, limit) / limit / 10000000;
 
 const getList = (pageNum) =>
   new Promise((resolve, reject) => {
@@ -37,7 +43,7 @@ const getList = (pageNum) =>
       .then((res) => {
         resolve(res.items);
       })
-      .catch((e) => {
+      .catch(() => {
         reject("获取列表失败");
       });
   });
@@ -61,14 +67,43 @@ const getUser = () =>
       });
   });
 
-const getStart = (campusId) =>
+const getStart = (campusId, orgId) =>
   new Promise((resolve, reject) => {
-    const data = {
-      campusId,
-      latitude: `30.786842${getRandom(10000, 99999)}`,
-      longitude: `103.886128${getRandom(10000, 99999)}`,
-      type: 1,
-    };
+    const loc = {};
+    switch (orgId) {
+      case 368:
+        loc.latitude = `30.786842${getRandom(10000, 99999)}`;
+        loc.longitude = `103.886128${getRandom(10000, 99999)}`;
+        break;
+      case 53:
+        loc.latitude = `30.826795${getRandom(10000, 99999)}`;
+        loc.longitude = `104.18535${getRandom(10000, 99999)}`;
+        break;
+      case 444:
+        loc.latitude = `30.82454${getRandom(10000, 99999)}`;
+        loc.longitude = `106.118579${getRandom(10000, 99999)}`;
+        break;
+      case 386:
+        loc.latitude = `30.728711${getRandom(10000, 99999)}`;
+        loc.longitude = `103.965401${getRandom(10000, 99999)}`;
+        break;
+      case 418:
+        loc.latitude = `30.764069${getRandom(10000, 99999)}`;
+        loc.longitude = `103.985006${getRandom(10000, 99999)}`;
+        break;
+      default:
+        return reject(false);
+    }
+    const data = Object.assign(
+      {},
+      {
+        campusId,
+        type: 1,
+      },
+      {
+        ...loc,
+      }
+    );
     axios
       .post("/running/api/v1/running/start", { ...data })
       .then((res) => {
@@ -80,7 +115,7 @@ const getStart = (campusId) =>
         reject(false);
       });
   });
-const getEnd = (circuitString = {}, distance = 0, time = 0) =>
+const getEnd = (circuitString = {}, distance = 0, time = 0, path) =>
   new Promise((resolve, reject) => {
     //circuitString = { runningRule, randomCircuit }
     //{runningRule:{rule:{},userCampus:{}},randomCircuit:{}}
@@ -105,26 +140,59 @@ const getEnd = (circuitString = {}, distance = 0, time = 0) =>
       startTime: moment().valueOf(),
       endTime: moment().add(time, "seconds").valueOf(),
       calories: parseInt(distance / 20),
+      totalTime: time,
     };
-    const segment = [
-      data.startTime + getRandom(10, 100),
-      data.endTime - getRandom(1500, 2500),
-    ];
-    data.totalTime = parseInt((segment[1] - segment[0]) / 1000);
-    const latitudeArr = [],
+    let latitudeArr = [],
       longitudeArr = [],
-      speedArr = [];
+      speedArr = [],
+      segment = [];
     const { requireLatitude, requireLongitude } = _circuitString.randomCircuit;
-    for (let i = 0; i < 3; i++) {
-      latitudeArr.push(requireLatitude[i]);
-      longitudeArr.push(requireLongitude[i]);
-      speedArr.push(getRandom(2, 20));
+    if (!path) {
+      for (let i = 0; i < 3; i++) {
+        latitudeArr.push(requireLatitude[i]);
+        longitudeArr.push(requireLongitude[i]);
+        speedArr.push(getRandom(2, 20));
+      }
+      latitudeArr = [latitudeArr];
+      longitudeArr = [longitudeArr];
+      segment = [
+        [
+          data.startTime + getRandom(10, 100),
+          data.endTime - getRandom(1500, 2500),
+        ],
+      ];
+    } else {
+      const _path = JSON.parse(base64.decode(path));
+      latitudeArr = _path.latitude.map((i) =>
+        Array.isArray(i) ? i.map((j) => getNearLoc(j)) : getNearLoc(i)
+      );
+      longitudeArr = _path.longitude.map((i) =>
+        Array.isArray(i) ? i.map((j) => getNearLoc(j)) : getNearLoc(i)
+      );
+      speedArr = _path.speed.map((i) =>
+        Array.isArray(i) ? i.map(() => getRandom(2, 20)) : i
+      );
+      const speedConfig = {
+        avg: data.totalTime / speedArr.length,
+        start: 0,
+      };
+      for (let i of latitudeArr) {
+        const _segment = [];
+        if (Array.isArray(i)) {
+          for (let index = 0; index < i.length - 1; index++) {
+            speedConfig.start += speedConfig.avg + getRandom(-10, 10);
+            _segment.push(moment().add(speedConfig.start, "seconds").valueOf());
+          }
+          segment.push(_segment);
+        }
+      }
     }
+
     data.circuitInfo = {
       ...data.circuitInfo,
-      latitude: [latitudeArr],
-      longitude: [longitudeArr],
-      segment: [segment],
+      latitude: latitudeArr,
+      longitude: longitudeArr,
+      segment: segment,
       speed: speedArr,
       calories: parseInt(distance / 20),
     };
@@ -151,20 +219,27 @@ function Home() {
   const { loading, run } = useRequest(
     (obj) => {
       return new Promise(async (resolve, reject) => {
+        //判断是否有导入路线
+        const { distance, time, path } = obj;
+
+        //获取用户信息
         const runningRule = await getUser().catch(() =>
           reject("获取用户信息失败")
         );
-
+        //获取跑步信息
         const randomCircuit = await getStart(
-          runningRule.rule.campusId
+          runningRule.rule.campusId,
+          runningRule.rule.orgId
         ).catch(() => reject("获取跑步信息失败"));
 
+        //提交跑步信息
         const end = await getEnd(
           { runningRule, randomCircuit },
-          obj.distance,
-          obj.time
+          distance,
+          time,
+          path
         ).catch((e) => {
-          reject("结束跑步失败");
+          reject(`结束跑步失败${e.message}`);
         });
         const { invalidReason, valid } = end;
         if (valid === 1) resolve(true);
@@ -188,7 +263,6 @@ function Home() {
     manual: true,
     onSuccess: (res) => {
       setList(res);
-      console.log(res);
     },
     onError: (e) => {
       message.error(e);
@@ -212,7 +286,7 @@ function Home() {
         }
       >
         <Space direction="vertical" style={{ width: "100%" }} size="large">
-          <Card title="告知 更新于2021/03/16">
+          <Card title="告知" extra={<b>最后更新 2021/03/16</b>}>
             <Typography.Text>
               1.本功能属于纯前端实现，不存在收集，保留用户信息等
               <br />
@@ -233,23 +307,33 @@ function Home() {
               <br />
             </Typography.Text>
           </Card>
-          <Form
-            onFinish={(e) => {
-              run(e);
-            }}
-          >
-            <Form.Item name="distance">
-              <Input addonBefore="距离" addonAfter="米" />
-            </Form.Item>
-            <Form.Item name="time">
-              <Input addonBefore="时间" addonAfter="秒" />
-            </Form.Item>
-            <Form.Item>
-              <Button htmlType="submit" type="primary" block loading={loading}>
-                奔跑
-              </Button>
-            </Form.Item>
-          </Form>
+          <Card title="功能">
+            <Form
+              onFinish={(e) => {
+                run(e);
+              }}
+            >
+              <Form.Item name="path">
+                <Input addonBefore="轨迹" placeholder="请粘贴导出轨迹(选填)" />
+              </Form.Item>
+              <Form.Item name="distance">
+                <Input addonBefore="距离" addonAfter="米" />
+              </Form.Item>
+              <Form.Item name="time">
+                <Input addonBefore="时间" addonAfter="秒" />
+              </Form.Item>
+              <Form.Item>
+                <Button
+                  htmlType="submit"
+                  type="primary"
+                  block
+                  loading={loading}
+                >
+                  奔跑
+                </Button>
+              </Form.Item>
+            </Form>
+          </Card>
 
           <List
             loading={listLoading}
@@ -265,48 +349,21 @@ function Home() {
                       <CloseCircleTwoTone twoToneColor="#eb2f96" />
                     )
                   }
-                  title={`距离:${item.validDistance}m 时间:${item.totalTime}s`}
+                  title={`距离:${item.validDistance}米 时间:${
+                    item.totalTime >= 60 && parseInt(item.totalTime / 60) + "分"
+                  }${(item.totalTime % 60) + "秒"}`}
                   description={item.startTime}
                 />
-                <Popover
-                  content={
-                    <Space direction="vertical">
-                      <Link
-                        to={{
-                          pathname: "/",
-                          state: {
-                            circuitInfo: JSON.parse(item.circuitInfo),
-                          },
-                        }}
-                      >
-                        <Button ghost type="primary">
-                          查看路线轨迹
-                        </Button>
-                      </Link>
-
-                      <Button
-                        type="primary"
-                        onClick={() => {
-                          try {
-                            const { latitude, longitude, speed } = JSON.parse(
-                              item.circuitInfo
-                            );
-                            copy(
-                              JSON.stringify({ latitude, longitude, speed })
-                            );
-                            message.success("已复制");
-                          } catch {
-                            message.error("复制失败");
-                          }
-                        }}
-                      >
-                        导出轨迹数据
-                      </Button>
-                    </Space>
-                  }
+                <Link
+                  to={{
+                    pathname: "/map",
+                    state: {
+                      circuitInfo: JSON.parse(item.circuitInfo),
+                    },
+                  }}
                 >
-                  <Button>更多</Button>
-                </Popover>
+                  <Button icon={<EyeOutlined />} type="link"></Button>
+                </Link>
               </List.Item>
             )}
           />
