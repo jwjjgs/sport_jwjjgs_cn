@@ -55,11 +55,14 @@ const getUser = () =>
       .then((res) => {
         const {
           runningRule: { rule, userCampus },
+          semesterRunningRecord: { validRunningNum: valid },
+          runningRule: { goal: { semesterGoal: total } }
         } = res;
         //{rule:{},userCampus:{}}
         resolve({
           rule,
           userCampus,
+          valid, total
         });
       })
       .catch(() => {
@@ -215,6 +218,10 @@ const getEnd = (circuitString = {}, distance = 0, time = 0, path) =>
 
 function Home() {
   const [list, setList] = useState([]);
+  const [runningRecord, setRunninRecord] = useState({
+    valid: 0,
+    total: 0,
+  })
 
   const { loading, run } = useRequest(
     (obj) => {
@@ -226,6 +233,7 @@ function Home() {
         const runningRule = await getUser().catch(() =>
           reject("获取用户信息失败")
         );
+
         //获取跑步信息
         const randomCircuit = await getStart(
           runningRule.rule.campusId,
@@ -271,7 +279,12 @@ function Home() {
 
   useEffect(() => {
     listRun();
-    getUser();
+    getUser().then(res => {
+      setRunninRecord({
+        valid: res.valid,
+        total: res.total
+      })
+    })
   }, []); //eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -329,7 +342,7 @@ function Home() {
                   block
                   loading={loading}
                 >
-                  奔跑
+                  奔跑({`${runningRecord.valid}/${runningRecord.total}`})
                 </Button>
               </Form.Item>
             </Form>
@@ -349,9 +362,8 @@ function Home() {
                       <CloseCircleTwoTone twoToneColor="#eb2f96" />
                     )
                   }
-                  title={`距离:${item.validDistance}米 时间:${
-                    item.totalTime >= 60 && parseInt(item.totalTime / 60) + "分"
-                  }${(item.totalTime % 60) + "秒"}`}
+                  title={`距离:${item.validDistance}米 时间:${item.totalTime >= 60 && parseInt(item.totalTime / 60) + "分"
+                    }${(item.totalTime % 60) + "秒"}`}
                   description={item.startTime}
                 />
                 <Link
