@@ -22,7 +22,7 @@ import moment from "moment";
 import md5 from "js-md5";
 import { Base64 as base64 } from "js-base64";
 
-const VERSION = "V 2.5.6";
+const VERSION = "V 2.5.7";
 
 const getRandom = (n, m) => Math.floor(Math.random() * (m - n + 1)) + n;
 
